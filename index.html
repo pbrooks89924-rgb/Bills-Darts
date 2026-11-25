@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="styles.css">
@@ -11,11 +11,6 @@
   <header>
     <p class="kicker">Bills fantasy darts</p>
     <h1>Predict</h1>
-    <nav>
-      <a href="index.html" class="active">Predict</a>
-      <a href="leaderboard.html">Table</a>
-      <a href="admin.html">Admin</a>
-    </nav>
   </header>
 
   <div class="container">
@@ -40,6 +35,7 @@
     </div>
   </div>
 
+  <script src="wheels.js"></script>
   <script src="config.js"></script>
   <script>
     let currentUser = null;
@@ -95,6 +91,12 @@
       }
     }
 
+    function esc(value) {
+      return String(value).replace(/[&<>"']/g, function (ch) {
+        return ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" })[ch];
+      });
+    }
+
     function renderMatches() {
       const container = document.getElementById('matches-container');
       if (!matches.length) {
@@ -102,19 +104,25 @@
         return;
       }
       container.innerHTML = matches.map(m => `
-        <div class="pred-row" data-id="${m.MatchID}">
-          <div><strong>${m.Player1}</strong> vs <strong>${m.Player2}</strong><br><small>First to ${m.FirstTo}</small></div>
-          <div class="score-inputs">
-            <input type="number" min="0" max="${m.FirstTo}" class="s1" placeholder="${m.Player1.split(' ')[0]}">
-            <span>-</span>
-            <input type="number" min="0" max="${m.FirstTo}" class="s2" placeholder="${m.Player2.split(' ')[0]}">
+        <article class="match-card" data-id="${esc(m.MatchID)}">
+          <p class="eyebrow">First to ${esc(m.FirstTo)}</p>
+          <div class="tie">
+            <p class="pname">${esc(m.Player1)}</p>
+            <div class="score-wheel" data-max="${Number(m.FirstTo) || 0}" data-value="0" data-target="s1" data-label="${esc(m.Player1)} score"></div>
           </div>
-        </div>
+          <div class="tie">
+            <p class="pname">${esc(m.Player2)}</p>
+            <div class="score-wheel" data-max="${Number(m.FirstTo) || 0}" data-value="0" data-target="s2" data-label="${esc(m.Player2)} score"></div>
+          </div>
+          <input type="hidden" class="s1" value="0">
+          <input type="hidden" class="s2" value="0">
+        </article>
       `).join('');
+      initWheels(container);
     }
 
     async function submitPredictions() {
-      const rows = document.querySelectorAll('.pred-row');
+      const rows = document.querySelectorAll('.match-card');
       const predictions = [];
       let valid = true;
       rows.forEach(row => {
@@ -180,5 +188,10 @@
 
     init();
   </script>
+  <nav>
+    <a href="index.html" class="active">Predict</a>
+    <a href="leaderboard.html">Table</a>
+    <a href="admin.html">Admin</a>
+  </nav>
 </body>
 </html>

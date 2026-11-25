@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Results - Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="styles.css">
@@ -11,11 +11,6 @@
   <header>
     <p class="kicker">Bills fantasy darts</p>
     <h1>Admin</h1>
-    <nav>
-      <a href="index.html">Predict</a>
-      <a href="leaderboard.html">Table</a>
-      <a href="admin.html" class="active">Admin</a>
-    </nav>
   </header>
 
   <div class="container">
@@ -44,6 +39,7 @@
     </div>
   </div>
 
+  <script src="wheels.js"></script>
   <script src="config.js"></script>
   <script>
     let matches = [];
@@ -67,20 +63,29 @@
 
     function renderMatches() {
       const container = document.getElementById('matches-container');
-      container.innerHTML = matches.map(m => `
-        <div class="result-row" data-id="${m.MatchID}">
-          <div><strong>${m.Player1}</strong> vs <strong>${m.Player2}</strong><br><small>First to ${m.FirstTo}</small></div>
-          <div class="score-inputs">
-            <input type="number" min="0" class="s1" value="${m.Score1 || ''}" placeholder="Score">
-            <span>-</span>
-            <input type="number" min="0" class="s2" value="${m.Score2 || ''}" placeholder="Score">
+      container.innerHTML = matches.map(m => {
+        const s1 = m.Score1 === '' || m.Score1 === undefined || m.Score1 === null ? 0 : Number(m.Score1);
+        const s2 = m.Score2 === '' || m.Score2 === undefined || m.Score2 === null ? 0 : Number(m.Score2);
+        return `
+        <article class="match-card" data-id="${m.MatchID}">
+          <p class="eyebrow">First to ${m.FirstTo}</p>
+          <div class="tie">
+            <p class="pname">${m.Player1}</p>
+            <div class="score-wheel" data-max="${Number(m.FirstTo) || 0}" data-value="${s1}" data-target="s1" data-label="${m.Player1} score"></div>
           </div>
-        </div>
-      `).join('');
+          <div class="tie">
+            <p class="pname">${m.Player2}</p>
+            <div class="score-wheel" data-max="${Number(m.FirstTo) || 0}" data-value="${s2}" data-target="s2" data-label="${m.Player2} score"></div>
+          </div>
+          <input type="hidden" class="s1" value="${s1}">
+          <input type="hidden" class="s2" value="${s2}">
+        </article>`;
+      }).join('');
+      initWheels(container);
     }
 
     async function submitResults() {
-      const rows = document.querySelectorAll('.result-row');
+      const rows = document.querySelectorAll('.match-card');
       const results = [];
       rows.forEach(row => {
         const s1 = parseInt(row.querySelector('.s1').value);
@@ -118,5 +123,10 @@
     // Auto load current
     loadMatches();
   </script>
+  <nav>
+    <a href="index.html">Predict</a>
+    <a href="leaderboard.html">Table</a>
+    <a href="admin.html" class="active">Admin</a>
+  </nav>
 </body>
 </html>
