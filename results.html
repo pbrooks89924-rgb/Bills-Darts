@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Results - Bills Darts Predictor</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <p class="kicker">Bills fantasy darts</p>
+    <h1>Admin</h1>
+    <nav>
+      <a href="index.html">Predict</a>
+      <a href="leaderboard.html">Table</a>
+      <a href="admin.html" class="active">Admin</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="switch">
+      <a href="admin.html">Draw</a>
+      <a href="results.html" class="active">Results</a>
+    </div>
+    <div class="card">
+      <h2>Enter results</h2>
+      <label>Round</label>
+      <select id="round" onchange="loadMatches()">
+        <option>Last32</option>
+        <option>Last16</option>
+        <option>QuarterFinal</option>
+        <option>SemiFinal</option>
+        <option>Final</option>
+      </select>
+      <button onclick="loadMatches()">Load Matches</button>
+    </div>
+
+    <div class="card hidden" id="results-card">
+      <h2 id="round-label">Results</h2>
+      <div id="matches-container"></div>
+      <button onclick="submitResults()">Submit Results & Calculate Points</button>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    let matches = [];
+
+    async function loadMatches() {
+      const round = document.getElementById('round').value;
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=matches&round=${round}`);
+        matches = await res.json();
+        if (!matches.length) {
+          alert('No matches found for this round');
+          return;
+        }
+        document.getElementById('round-label').textContent = `Enter results for ${round}`;
+        document.getElementById('results-card').classList.remove('hidden');
+        renderMatches();
+      } catch (e) {
+        alert('Error loading matches');
+      }
+    }
+
+    function renderMatches() {
+      const container = document.getElementById('matches-container');
+      container.innerHTML = matches.map(m => `
+        <div class="result-row" data-id="${m.MatchID}">
+          <div><strong>${m.Player1}</strong> vs <strong>${m.Player2}</strong><br><small>First to ${m.FirstTo}</small></div>
+          <div class="score-inputs">
+            <input type="number" min="0" class="s1" value="${m.Score1 || ''}" placeholder="Score">
+            <span>-</span>
+            <input type="number" min="0" class="s2" value="${m.Score2 || ''}" placeholder="Score">
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function submitResults() {
+      const rows = document.querySelectorAll('.result-row');
+      const results = [];
+      rows.forEach(row => {
+        const s1 = parseInt(row.querySelector('.s1').value);
+        const s2 = parseInt(row.querySelector('.s2').value);
+        if (!isNaN(s1) && !isNaN(s2)) {
+          results.push({ matchId: row.dataset.id, score1: s1, score2: s2 });
+        }
+      });
+      if (!results.length) return alert('Enter at least one result');
+
+      showStatus('Submitting...', '');
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'submitResults', results })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showStatus(data.message || 'Results saved and points calculated!', 'success');
+        } else {
+          showStatus(data.error || 'Error', 'error');
+        }
+      } catch (e) {
+        showStatus('Network error', 'error');
+      }
+    }
+
+    function showStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+    }
+
+    // Auto load current
+    loadMatches();
+  </script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Bills Darts Predictor</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <p class="kicker">Bills fantasy darts</p>
+    <h1>Admin</h1>
+    <nav>
+      <a href="index.html">Predict</a>
+      <a href="leaderboard.html">Table</a>
+      <a href="admin.html" class="active">Admin</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="switch">
+      <a href="admin.html" class="active">Draw</a>
+      <a href="results.html">Results</a>
+    </div>
+    <div class="card">
+      <h2>Set up matches for a round</h2>
+      <label>Round</label>
+      <select id="round">
+        <option>Last32</option>
+        <option>Last16</option>
+        <option>QuarterFinal</option>
+        <option>SemiFinal</option>
+        <option>Final</option>
+      </select>
+      <label>First to (sets)</label>
+      <input type="number" id="firstTo" value="5" min="3" max="7">
+      <button onclick="loadPlayers()">Load Players</button>
+    </div>
+
+    <div class="card hidden" id="setup-card">
+      <h2>Add Matches</h2>
+      <div id="add-form">
+        <label>Player 1</label>
+        <select id="p1"></select>
+        <label>Player 2</label>
+        <select id="p2"></select>
+        <button onclick="addMatch()">Add Match</button>
+      </div>
+      <h3>Matches to submit</h3>
+      <div id="match-list"></div>
+      <button onclick="submitMatches()" class="secondary">Submit all matches to sheet</button>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    let players = [];
+    let matchesToAdd = [];
+
+    async function loadPlayers() {
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=players`);
+        players = await res.json();
+        if (!players.length) {
+          alert('No players found. Add them in the Players sheet first.');
+          return;
+        }
+        const opts = players.map(p => `<option>${p}</option>`).join('');
+        document.getElementById('p1').innerHTML = opts;
+        document.getElementById('p2').innerHTML = opts;
+        document.getElementById('setup-card').classList.remove('hidden');
+      } catch (e) {
+        alert('Error loading players. Check SCRIPT_URL');
+      }
+    }
+
+    function addMatch() {
+      const p1 = document.getElementById('p1').value;
+      const p2 = document.getElementById('p2').value;
+      if (p1 === p2) return alert('Players must be different');
+      matchesToAdd.push({ player1: p1, player2: p2 });
+      renderList();
+    }
+
+    function renderList() {
+      document.getElementById('match-list').innerHTML = matchesToAdd.map((m, i) => 
+        `<div class="match-row"><span>${m.player1} vs ${m.player2}</span><button class="danger" onclick="removeMatch(${i})" style="width:auto;padding:0.3rem 0.6rem;">Remove</button></div>`
+      ).join('') || '<p>No matches added yet</p>';
+    }
+
+    function removeMatch(i) {
+      matchesToAdd.splice(i, 1);
+      renderList();
+    }
+
+    async function submitMatches() {
+      if (!matchesToAdd.length) return alert('Add some matches first');
+      const round = document.getElementById('round').value;
+      const firstTo = parseInt(document.getElementById('firstTo').value);
+      showStatus('Submitting...', '');
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            action: 'setupMatches',
+            round,
+            firstTo,
+            matches: matchesToAdd
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showStatus(`Success! ${data.count} matches set for ${round}. Current round updated.`, 'success');
+          matchesToAdd = [];
+          renderList();
+        } else {
+          showStatus(data.error || 'Error', 'error');
+        }
+      } catch (e) {
+        showStatus('Network error', 'error');
+      }
+    }
+
+    function showStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+    }
+  </script>
+</body>
+</html>
