@@ -45,7 +45,10 @@
       el.dataset.value = String(value);
       scroller.setAttribute("aria-valuenow", String(value));
       var nodes = scroller.querySelectorAll(".score-n");
-      for (var i = 0; i < nodes.length; i++) nodes[i].classList.toggle("is-on", i === value);
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].classList.toggle("is-on", i === value);
+        nodes[i].classList.toggle("is-near", Math.abs(i - value) === 1);
+      }
       var field = input();
       if (field) field.value = String(value);
     }
