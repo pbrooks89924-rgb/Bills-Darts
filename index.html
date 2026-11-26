@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
   <header>
@@ -107,9 +107,33 @@
       if (currentUser) {
         document.getElementById('user-setup').classList.add('hidden');
         document.getElementById('predict-section').classList.remove('hidden');
-        document.getElementById('user-greeting').textContent = `Welcome back, ${currentUser.name}!`;
+        document.getElementById('user-greeting').textContent = '';
+        showGreeting(`Welcome back, ${currentUser.name}!`);
         await loadConfigAndMatches();
       }
+    }
+
+    function showGreeting(text) {
+      const el = document.getElementById('user-greeting');
+      el.textContent = text + ' ';
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'not-you';
+      link.textContent = '(not you?)';
+      link.onclick = signOut;
+      el.appendChild(link);
+    }
+
+    function signOut() {
+      currentUser = null;
+      try { localStorage.removeItem('dartsUser'); } catch (e) {}
+      document.getElementById('user-name').value = '';
+      document.getElementById('user-email').value = '';
+      document.getElementById('matches-container').innerHTML = '';
+      document.getElementById('status').textContent = '';
+      document.getElementById('status').className = '';
+      document.getElementById('predict-section').classList.add('hidden');
+      document.getElementById('user-setup').classList.remove('hidden');
     }
 
     function saveUser(event) {
@@ -121,7 +145,8 @@
       try { localStorage.setItem('dartsUser', JSON.stringify(currentUser)); } catch (e) {}
       document.getElementById('user-setup').classList.add('hidden');
       document.getElementById('predict-section').classList.remove('hidden');
-      document.getElementById('user-greeting').textContent = `Welcome, ${name}!`;
+      document.getElementById('user-greeting').textContent = '';
+      showGreeting(`Welcome, ${name}!`);
       loadConfigAndMatches();
       fetch(SCRIPT_URL, {
         method: 'POST',

@@ -260,9 +260,18 @@ th { color: var(--muted); font-weight: 600; }
 .status.success { background: #14301c; }
 .status.error { background: #3a1518; color: var(--danger); }
 
-button:disabled {
-  opacity: 0.45;
-  background: #3a3a42;
+button.not-you {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .lock-row {
