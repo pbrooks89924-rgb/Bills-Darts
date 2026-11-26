@@ -157,9 +157,30 @@
     }
 
     function renderList() {
-      document.getElementById('match-list').innerHTML = matchesToAdd.map(function (m, i) {
-        return '<div class="match-row"><span>' + m.player1 + ' vs ' + m.player2 + '</span><button type="button" class="quiet" onclick="removeMatch(' + i + ')">Remove</button></div>';
-      }).join('') || '<p>No matches added yet</p>';
+      const list = document.getElementById('match-list');
+      list.innerHTML = '';
+      if (!matchesToAdd.length) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No matches added yet';
+        list.appendChild(empty);
+      } else {
+        matchesToAdd.forEach(function (match, index) {
+          const row = document.createElement('div');
+          row.className = 'match-row';
+          const name = document.createElement('span');
+          name.className = 'tie-name';
+          name.textContent = match.player1 + ' vs ' + match.player2;
+          const remove = document.createElement('span');
+          remove.className = 'remove';
+          remove.setAttribute('role', 'button');
+          remove.tabIndex = 0;
+          remove.textContent = 'Remove';
+          remove.addEventListener('click', function () { removeMatch(index); });
+          row.appendChild(name);
+          row.appendChild(remove);
+          list.appendChild(row);
+        });
+      }
       renderPickers();
     }
 

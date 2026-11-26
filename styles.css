@@ -72,6 +72,7 @@ header h1 {
 .container {
   flex: 1;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 1rem;
   -webkit-overflow-scrolling: touch;
@@ -138,17 +139,23 @@ button {
   margin-top: 0.75rem;
 }
 
-button.quiet {
-  width: auto;
-  min-height: 0;
+.remove {
+  flex: none;
   margin: 0;
-  padding: 0.15rem 0;
-  background: transparent;
+  padding: 0;
+  background: none;
+  border: 0;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
+  line-height: 1;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.tie-name {
+  min-width: 0;
+  font-size: 0.95rem;
 }
 
 .match-row {
@@ -170,9 +177,43 @@ button.quiet {
   font-weight: 700;
 }
 
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-th, td { padding: 0.55rem 0.35rem; text-align: left; border-bottom: 1px solid var(--border); }
+.card { max-width: 100%; overflow: hidden; }
+
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+}
+
+th, td {
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
 th { color: var(--muted); font-weight: 600; }
+
+.pin, .pin-name {
+  position: sticky;
+  z-index: 2;
+  background: var(--card);
+  box-shadow: 1px 0 0 var(--border);
+}
+
+.pin { left: 0; font-weight: 700; }
+.rank { margin-right: 0.35rem; color: var(--muted); }
 
 .status { padding: 0.8rem; border-radius: 0.75rem; margin: 0.8rem 0; }
 .status.success { background: #14301c; }
