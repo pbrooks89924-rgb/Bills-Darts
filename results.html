@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Results - Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <header>
@@ -17,6 +17,17 @@
     <div class="switch">
       <a href="admin.html">Draw</a>
       <a href="results.html" class="active">Results</a>
+    </div>
+    <div class="card">
+      <div class="lock-row">
+        <div>
+          <h2>Lock predictions</h2>
+          <p id="lock-note">Checking…</p>
+        </div>
+        <button type="button" id="lock-toggle" class="lock-switch" aria-pressed="false" aria-label="Lock predictions" onclick="toggleLock()">
+          <span></span>
+        </button>
+      </div>
     </div>
     <div class="card">
       <h2>Enter results</h2>
@@ -125,7 +136,45 @@
       el.className = 'status ' + type;
     }
 
-    // Auto load current
+    function setLockUi(on) {
+      const button = document.getElementById('lock-toggle');
+      button.classList.toggle('on', on);
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+      document.getElementById('lock-note').textContent = on
+        ? 'On. Nobody can edit predictions.'
+        : 'Off. Only unfinished matches can be edited.';
+    }
+
+    async function loadLock() {
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=config`);
+        const cfg = await res.json();
+        setLockUi(cfg.predictionsLocked === true);
+      } catch (e) {
+        document.getElementById('lock-note').textContent = 'Could not read the lock. Redeploy the Apps Script.';
+      }
+    }
+
+    async function toggleLock() {
+      const next = document.getElementById('lock-toggle').getAttribute('aria-pressed') !== 'true';
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'setPredictionsLocked', locked: next })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert(data.error || 'Could not update the lock. Redeploy the Apps Script.');
+          return;
+        }
+        setLockUi(data.predictionsLocked === true);
+      } catch (e) {
+        alert('Could not update the lock. Redeploy the Apps Script.');
+      }
+    }
+
+    loadLock();
     loadMatches();
   </script>
   <nav>

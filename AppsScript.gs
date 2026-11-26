@@ -88,6 +88,7 @@ function doGet(e) {
       case 'config':
         return jsonResponse({
           currentRound: getConfig(ss, 'CurrentRound'),
+          predictionsLocked: isPredictionsLocked(ss),
           rounds: ROUNDS
         });
       case 'user':
@@ -119,6 +120,9 @@ function doPost(e) {
       case 'setCurrentRound':
         setConfig(ss, 'CurrentRound', data.round);
         return jsonResponse({ success: true, currentRound: data.round });
+      case 'setPredictionsLocked':
+        setConfig(ss, 'PredictionsLocked', data.locked ? 'TRUE' : 'FALSE');
+        return jsonResponse({ success: true, predictionsLocked: data.locked ? true : false });
       default:
         return jsonResponse({ error: 'Unknown action' });
     }
@@ -261,8 +265,29 @@ function setupMatches(ss, data) {
   return { success: true, count: matches.length, round };
 }
 
+function isPredictionsLocked(ss) {
+  const value = String(getConfig(ss, 'PredictionsLocked') || '').toLowerCase();
+  return value === 'true' || value === '1' || value === 'yes';
+}
+
+function completedMatchIds(ss, round) {
+  const sheet = ss.getSheetByName(SHEET_NAMES.MATCHES);
+  const data = sheet.getDataRange().getValues();
+  const done = {};
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][1] !== round) continue;
+    const finished = data[i][8] === true || String(data[i][8]).toLowerCase() === 'true';
+    if (finished) done[String(data[i][0])] = true;
+  }
+  return done;
+}
+
 function submitPredictions(ss, data) {
   const { email, name, predictions, round } = data; // predictions: [{matchId, score1, score2}, ...]
+  if (isPredictionsLocked(ss)) {
+    return { error: 'Round already started' };
+  }
+  const done = completedMatchIds(ss, round);
   // Save/update user
   const users = ss.getSheetByName(SHEET_NAMES.USERS);
   let userExists = false;
@@ -278,22 +303,21 @@ function submitPredictions(ss, data) {
     users.appendRow([email, name]);
   }
   
-  // Remove previous predictions for this user + round
+  // Replace only predictions for matches that are not finished
   const preds = ss.getSheetByName(SHEET_NAMES.PREDICTIONS);
   const predData = preds.getDataRange().getValues();
   for (let i = predData.length - 1; i >= 1; i--) {
-    if (predData[i][1] === email && predData[i][7] === round) { // Email and Round
+    if (predData[i][1] === email && predData[i][7] === round && !done[String(predData[i][3])]) {
       preds.deleteRow(i + 1);
     }
   }
   
-  // Add new predictions
   const timestamp = new Date();
   predictions.forEach(p => {
+    if (done[String(p.matchId)]) return;
     preds.appendRow([timestamp, email, name, p.matchId, p.score1, p.score2, 0, round]);
   });
   
-  // Recalculate points for this user/round (if results already in)
   recalculatePointsForRound(ss, round);
   rebuildLeaderboard(ss);
   

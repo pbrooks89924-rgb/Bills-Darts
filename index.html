@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <header>
@@ -29,7 +29,7 @@
         <h2 id="round-title">Make your predictions</h2>
         <p id="user-greeting"></p>
         <div id="matches-container"></div>
-        <button onclick="submitPredictions()">Submit Predictions</button>
+        <button id="submit-predictions" onclick="submitPredictions()">Submit Predictions</button>
         <div id="status"></div>
       </div>
     </div>
@@ -42,6 +42,11 @@
     let currentUser = null;
     let currentRound = 'Last32';
     let matches = [];
+    let predictionsLocked = false;
+
+    function matchDone(match) {
+      return match.Completed === true || String(match.Completed).toLowerCase() === 'true';
+    }
     let myPicks = {};
 
     function loadMyPicks() {
@@ -128,6 +133,7 @@
         const cfgRes = await fetch(`${SCRIPT_URL}?action=config`);
         const cfg = await cfgRes.json();
         currentRound = cfg.currentRound || 'Last32';
+        predictionsLocked = cfg.predictionsLocked === true;
         document.getElementById('round-title').textContent = `Predictions for ${currentRound}`;
 
         const res = await fetch(`${SCRIPT_URL}?action=matches&round=${currentRound}`);
@@ -156,9 +162,10 @@
         const saved = myPicks[String(m.MatchID)];
         const s1 = saved && Number.isFinite(saved[0]) ? Math.min(top, Math.max(0, saved[0])) : top;
         const s2 = saved && Number.isFinite(saved[1]) ? Math.min(top, Math.max(0, saved[1])) : top;
+        const frozen = predictionsLocked || matchDone(m);
         return `
-        <article class="match-card" data-id="${esc(m.MatchID)}">
-          <p class="eyebrow">First to ${esc(m.FirstTo)}</p>
+        <article class="match-card${frozen ? ' frozen' : ''}" data-id="${esc(m.MatchID)}" data-frozen="${frozen ? '1' : '0'}">
+          <p class="eyebrow">First to ${esc(m.FirstTo)}${matchDone(m) ? ' · Finished' : ''}</p>
           <div class="vs-line">
             <p class="pname">${esc(m.Player1)}</p>
             <div class="score-wheel" data-max="${top}" data-value="${s1}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
@@ -171,26 +178,41 @@
       `;
       }).join('');
       initWheels(container);
+      const button = document.getElementById('submit-predictions');
+      const open = matches.some(function (match) { return !matchDone(match); });
+      if (button) button.disabled = predictionsLocked || !open;
+      if (predictionsLocked) alert('Round already started');
     }
 
     async function submitPredictions() {
+      if (predictionsLocked) {
+        alert('Round already started');
+        return;
+      }
       const rows = document.querySelectorAll('.match-card');
       const predictions = [];
       let valid = true;
+      let openCount = 0;
       rows.forEach(row => {
+        if (row.dataset.frozen === '1') return;
+        openCount += 1;
         const s1 = parseInt(row.querySelector('.s1').value);
         const s2 = parseInt(row.querySelector('.s2').value);
         const match = matches.find(m => m.MatchID === row.dataset.id);
         if (isNaN(s1) || isNaN(s2)) { valid = false; return; }
-        if (Math.max(s1, s2) !== match.FirstTo || Math.min(s1, s2) >= match.FirstTo) {
+        if (Math.max(s1, s2) !== Number(match.FirstTo) || Math.min(s1, s2) >= Number(match.FirstTo)) {
           valid = false;
           alert(`Invalid score for ${match.Player1} vs ${match.Player2}. One player must reach exactly ${match.FirstTo}, the other less.`);
           return;
         }
         predictions.push({ matchId: row.dataset.id, score1: s1, score2: s2 });
       });
-      if (!valid || predictions.length !== matches.length) {
-        showStatus('Please fill all scores correctly', 'error');
+      if (!openCount) {
+        showStatus('Nothing left to edit', 'error');
+        return;
+      }
+      if (!valid || predictions.length !== openCount) {
+        showStatus('Please fill all open scores correctly', 'error');
         return;
       }
 
