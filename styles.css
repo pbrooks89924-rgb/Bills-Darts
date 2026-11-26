@@ -123,6 +123,15 @@ nav a.active { color: var(--accent); }
   margin-bottom: 0.75rem;
 }
 
+.score-key {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+.score-key + .score-key { margin-top: 0.15rem; }
+.score-key:last-of-type { margin-bottom: 0.8rem; }
+
 h2 {
   margin: 0 0 0.75rem;
   font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
