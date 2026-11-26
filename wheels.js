@@ -104,6 +104,17 @@
       return function () { setValue(value, true); };
     }
 
+    var wheelLock = false;
+    scroller.addEventListener("wheel", function (event) {
+      event.preventDefault();
+      if (wheelLock) return;
+      var dir = event.deltaY > 0 || event.deltaX > 0 ? 1 : -1;
+      if (!event.deltaY && !event.deltaX) return;
+      wheelLock = true;
+      setValue((Number(el.dataset.value) || 0) + dir, true);
+      window.setTimeout(function () { wheelLock = false; }, 160);
+    }, { passive: false });
+
     var timer = 0;
     scroller.addEventListener("scroll", function () {
       if (lock) return;
