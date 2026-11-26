@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
   <header>
@@ -29,7 +29,7 @@
         <h2 id="round-title">Make your predictions</h2>
         <p id="user-greeting"></p>
         <div id="matches-container"></div>
-        <button onclick="submitPredictions()">Submit Predictions</button>
+        <button id="submit-predictions" onclick="submitPredictions()">Submit Predictions</button>
         <div id="status"></div>
       </div>
     </div>
@@ -42,6 +42,7 @@
     let currentUser = null;
     let currentRound = 'Last32';
     let matches = [];
+    let predictionsLocked = false;
 
     async function init() {
       currentUser = JSON.parse(localStorage.getItem('dartsUser') || 'null');
@@ -81,11 +82,13 @@
         const cfgRes = await fetch(`${SCRIPT_URL}?action=config`);
         const cfg = await cfgRes.json();
         currentRound = cfg.currentRound || 'Last32';
+        predictionsLocked = cfg.predictionsLocked === true;
         document.getElementById('round-title').textContent = `Predictions for ${currentRound}`;
 
         const res = await fetch(`${SCRIPT_URL}?action=matches&round=${currentRound}`);
         matches = await res.json();
         renderMatches();
+        applyLock();
       } catch (e) {
         showStatus('Could not load matches. Check SCRIPT_URL in config.js', 'error');
       }
@@ -122,7 +125,17 @@
       initWheels(container);
     }
 
+    function applyLock() {
+      const button = document.getElementById('submit-predictions');
+      if (button) button.disabled = predictionsLocked;
+      if (predictionsLocked) alert('Round already started');
+    }
+
     async function submitPredictions() {
+      if (predictionsLocked) {
+        alert('Round already started');
+        return;
+      }
       const rows = document.querySelectorAll('.match-card');
       const predictions = [];
       let valid = true;
