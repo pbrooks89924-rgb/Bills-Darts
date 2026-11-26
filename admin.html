@@ -280,7 +280,9 @@
         });
         const data = await res.json();
         if (!data.success) {
-          alert(data.error || 'Could not update the lock. Redeploy the Apps Script.');
+          alert(data.error === 'Unknown action'
+            ? 'The published script is still the old one. Paste AppsScript.gs into Apps Script, then Deploy → Manage deployments → New version.'
+            : (data.error || 'Could not update the lock. Redeploy the Apps Script.'));
           return;
         }
         setLockUi(data.predictionsLocked === true);
