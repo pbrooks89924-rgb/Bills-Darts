@@ -181,12 +181,12 @@
       const button = document.getElementById('submit-predictions');
       const open = matches.some(function (match) { return !matchDone(match); });
       if (button) button.disabled = predictionsLocked || !open;
-      if (predictionsLocked) alert('Round already started');
+      if (predictionsLocked) alert('Selections locked');
     }
 
     async function submitPredictions() {
       if (predictionsLocked) {
-        alert('Round already started');
+        alert('Selections locked');
         return;
       }
       const rows = document.querySelectorAll('.match-card');

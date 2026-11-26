@@ -285,7 +285,7 @@ function completedMatchIds(ss, round) {
 function submitPredictions(ss, data) {
   const { email, name, predictions, round } = data; // predictions: [{matchId, score1, score2}, ...]
   if (isPredictionsLocked(ss)) {
-    return { error: 'Round already started' };
+    return { error: 'Selections locked' };
   }
   const done = completedMatchIds(ss, round);
   // Save/update user
