@@ -160,11 +160,6 @@ button {
   margin-top: 0.75rem;
 }
 
-button:disabled {
-  opacity: 0.45;
-  background: #3a3a42;
-}
-
 .remove {
   flex: none;
   margin: 0;
@@ -265,38 +260,7 @@ th { color: var(--muted); font-weight: 600; }
 .status.success { background: #14301c; }
 .status.error { background: #3a1518; color: var(--danger); }
 
-.lock-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-.lock-row h2 { margin: 0; }
-.lock-row p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.85rem; }
-button.lock-switch {
-  position: relative;
-  flex: none;
-  width: 3.4rem;
-  height: 2rem;
-  min-height: 2rem;
-  margin: 0;
-  padding: 0.15rem;
-  border: 0;
-  border-radius: 999px;
-  background: #3a3a42;
-}
-button.lock-switch span {
-  display: block;
-  width: 1.7rem;
-  height: 1.7rem;
-  border-radius: 50%;
-  background: #fff;
-  transform: translateX(0);
-}
-button.lock-switch.on { background: var(--accent); }
-button.lock-switch.on span { transform: translateX(1.4rem); }
-.locked .score-scroll { pointer-events: none; }
-button:disabled { opacity: 0.5; }
+.hidden { display: none; }
 
 .switch { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
 .switch a {

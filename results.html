@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Results - Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
   <header>
@@ -17,17 +17,6 @@
     <div class="switch">
       <a href="admin.html">Draw</a>
       <a href="results.html" class="active">Results</a>
-    </div>
-    <div class="card">
-      <div class="lock-row">
-        <div>
-          <h2>Lock predictions</h2>
-          <p id="lock-note">Open. Predictions can be submitted.</p>
-        </div>
-        <button type="button" id="lock-toggle" class="lock-switch" aria-pressed="false" aria-label="Lock predictions" onclick="toggleLock()">
-          <span></span>
-        </button>
-      </div>
     </div>
     <div class="card">
       <h2>Enter results</h2>
@@ -87,11 +76,13 @@
         return `
         <article class="match-card" data-id="${m.MatchID}">
           <p class="eyebrow">First to ${m.FirstTo}</p>
-          <div class="vs-line">
+          <div class="tie">
             <p class="pname">${m.Player1}</p>
-            <div class="score-wheel" data-max="${firstTo}" data-value="${s1}" data-target="s1" data-label="${m.Player1} score"></div>
-            <div class="score-wheel" data-max="${firstTo}" data-value="${s2}" data-target="s2" data-label="${m.Player2} score"></div>
-            <p class="pname right">${m.Player2}</p>
+            <div class="score-wheel" data-max="${Number(m.FirstTo) || 0}" data-value="${s1}" data-target="s1" data-label="${m.Player1} score"></div>
+          </div>
+          <div class="tie">
+            <p class="pname">${m.Player2}</p>
+            <div class="score-wheel" data-max="${Number(m.FirstTo) || 0}" data-value="${s2}" data-target="s2" data-label="${m.Player2} score"></div>
           </div>
           <input type="hidden" class="s1" value="${s1}">
           <input type="hidden" class="s2" value="${s2}">
@@ -135,29 +126,6 @@
       el.textContent = msg;
       el.className = 'status ' + type;
     }
-
-    function setLockUi(on) {
-      const button = document.getElementById('lock-toggle');
-      button.classList.toggle('on', on);
-      button.setAttribute('aria-pressed', on ? 'true' : 'false');
-      document.getElementById('lock-note').textContent = on
-        ? 'Locked. Submit is switched off.'
-        : 'Open. Predictions can be submitted.';
-    }
-
-    function loadLock() {
-      let on = false;
-      try { on = localStorage.getItem('dartsRoundLocked') === '1'; } catch (e) {}
-      setLockUi(on);
-    }
-
-    function toggleLock() {
-      const next = document.getElementById('lock-toggle').getAttribute('aria-pressed') !== 'true';
-      try { localStorage.setItem('dartsRoundLocked', next ? '1' : '0'); } catch (e) {}
-      setLockUi(next);
-    }
-
-    loadLock();
 
     // Auto load current
     loadMatches();

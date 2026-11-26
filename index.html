@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
   <header>
@@ -29,7 +29,7 @@
         <h2 id="round-title">Make your predictions</h2>
         <p id="user-greeting"></p>
         <div id="matches-container"></div>
-        <button id="submit-predictions" onclick="submitPredictions()">Submit Predictions</button>
+        <button onclick="submitPredictions()">Submit Predictions</button>
         <div id="status"></div>
       </div>
     </div>
@@ -42,24 +42,6 @@
     let currentUser = null;
     let currentRound = 'Last32';
     let matches = [];
-
-    function roundLocked() {
-      try { return localStorage.getItem('dartsRoundLocked') === '1'; } catch (e) { return false; }
-    }
-
-    function predictionKey() {
-      return 'dartsPicks:' + (currentUser && currentUser.email ? currentUser.email : '') + ':' + currentRound;
-    }
-
-    function savedPicks() {
-      try { return JSON.parse(localStorage.getItem(predictionKey()) || '{}'); } catch (e) { return {}; }
-    }
-
-    function rememberPicks(predictions) {
-      const map = {};
-      predictions.forEach(function (pick) { map[pick.matchId] = [pick.score1, pick.score2]; });
-      try { localStorage.setItem(predictionKey(), JSON.stringify(map)); } catch (e) {}
-    }
 
     async function init() {
       currentUser = JSON.parse(localStorage.getItem('dartsUser') || 'null');
@@ -104,7 +86,6 @@
         const res = await fetch(`${SCRIPT_URL}?action=matches&round=${currentRound}`);
         matches = await res.json();
         renderMatches();
-        applyLock();
       } catch (e) {
         showStatus('Could not load matches. Check SCRIPT_URL in config.js', 'error');
       }
@@ -124,38 +105,24 @@
       }
       container.innerHTML = matches.map(m => {
         const top = Number(m.FirstTo) || 0;
-        const saved = savedPicks()[m.MatchID];
-        const s1 = saved ? saved[0] : top;
-        const s2 = saved ? saved[1] : top;
         return `
         <article class="match-card" data-id="${esc(m.MatchID)}">
           <p class="eyebrow">First to ${esc(m.FirstTo)}</p>
           <div class="vs-line">
             <p class="pname">${esc(m.Player1)}</p>
-            <div class="score-wheel" data-max="${top}" data-value="${s1}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
-            <div class="score-wheel" data-max="${top}" data-value="${s2}" data-target="s2" data-label="${esc(m.Player2)} score"></div>
+            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
+            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s2" data-label="${esc(m.Player2)} score"></div>
             <p class="pname right">${esc(m.Player2)}</p>
           </div>
-          <input type="hidden" class="s1" value="${s1}">
-          <input type="hidden" class="s2" value="${s2}">
+          <input type="hidden" class="s1" value="${top}">
+          <input type="hidden" class="s2" value="${top}">
         </article>
       `;
       }).join('');
       initWheels(container);
     }
 
-    function applyLock() {
-      const locked = roundLocked();
-      const button = document.getElementById('submit-predictions');
-      if (button) button.disabled = locked;
-      if (locked) alert('Round already started');
-    }
-
     async function submitPredictions() {
-      if (roundLocked()) {
-        alert('Round already started');
-        return;
-      }
       const rows = document.querySelectorAll('.match-card');
       const predictions = [];
       let valid = true;
@@ -191,7 +158,6 @@
         });
         const data = await res.json();
         if (data.success) {
-          rememberPicks(predictions);
           showStatus(data.message || 'Predictions submitted successfully!', 'success');
         } else {
           showStatus(data.error || 'Error', 'error');
