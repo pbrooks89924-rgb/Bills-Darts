@@ -17,33 +17,75 @@
     <div class="card">
       <h2>League Leaderboard</h2>
       <p>5 points for exact scoreline · 2 points for correct winner · 0 for wrong</p>
-      <div id="lb-container">Loading...</div>
+      <div class="table-scroll" id="lb-container">Loading...</div>
     </div>
   </div>
 
   <script src="config.js"></script>
   <script>
     async function loadLeaderboard() {
+      const container = document.getElementById('lb-container');
       try {
         const res = await fetch(`${SCRIPT_URL}?action=leaderboard`);
         const data = await res.json();
+        container.replaceChildren();
         if (!data.length) {
-          document.getElementById('lb-container').innerHTML = '<p>No predictions yet.</p>';
+          const empty = document.createElement('p');
+          empty.textContent = 'No predictions yet.';
+          container.appendChild(empty);
           return;
         }
-        const rounds = ['Last32', 'Last16', 'QuarterFinal', 'SemiFinal', 'Final'];
-        let html = '<table><thead><tr><th>Pos</th><th>Name</th>';
-        rounds.forEach(r => html += `<th>${r}</th>`);
-        html += '<th>Total</th></tr></thead><tbody>';
-        data.forEach((row, i) => {
-          html += `<tr><td>${i + 1}</td><td>${row.Name}</td>`;
-          rounds.forEach(r => html += `<td>${row[r] || 0}</td>`);
-          html += `<td><strong>${row.Total || 0}</strong></td></tr>`;
+        const rounds = [
+          ['Last32', 'L32'],
+          ['Last16', 'L16'],
+          ['QuarterFinal', 'QF'],
+          ['SemiFinal', 'SF'],
+          ['Final', 'F']
+        ];
+        const table = document.createElement('table');
+        const head = document.createElement('tr');
+        ['Total', 'Name'].concat(rounds.map(function (round) { return round[1]; })).forEach(function (label, index) {
+          const cell = document.createElement('th');
+          cell.textContent = label;
+          if (index === 0) cell.className = 'pin';
+          if (index === 1) cell.className = 'pin-name';
+          head.appendChild(cell);
         });
-        html += '</tbody></table>';
-        document.getElementById('lb-container').innerHTML = html;
+        const thead = document.createElement('thead');
+        thead.appendChild(head);
+        const tbody = document.createElement('tbody');
+        data.forEach(function (row, index) {
+          const tr = document.createElement('tr');
+          const total = document.createElement('td');
+          total.className = 'pin';
+          total.textContent = String(row.Total || 0);
+          const name = document.createElement('td');
+          name.className = 'pin-name';
+          const rank = document.createElement('span');
+          rank.className = 'rank';
+          rank.textContent = String(index + 1);
+          name.appendChild(rank);
+          name.appendChild(document.createTextNode(row.Name || ''));
+          tr.appendChild(total);
+          tr.appendChild(name);
+          rounds.forEach(function (round) {
+            const cell = document.createElement('td');
+            cell.textContent = String(row[round[0]] || 0);
+            tr.appendChild(cell);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        container.appendChild(table);
+        requestAnimationFrame(function () {
+          const totalWidth = head.children[0].getBoundingClientRect().width;
+          table.querySelectorAll('.pin-name').forEach(function (cell) {
+            cell.style.left = totalWidth + 'px';
+          });
+        });
       } catch (e) {
-        document.getElementById('lb-container').innerHTML = '<p>Could not load leaderboard. Check config.js</p>';
+        container.textContent = 'Could not load leaderboard. Check config.js';
       }
     }
     loadLeaderboard();
