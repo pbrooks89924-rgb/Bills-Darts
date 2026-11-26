@@ -8,3 +8,92 @@
   <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
+  <header>
+    <p class="kicker">Bills fantasy darts</p>
+    <h1>League</h1>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>League Leaderboard</h2>
+      <p>5 points for exact scoreline · 2 points for correct winner · 0 for wrong</p>
+      <div class="table-scroll" id="lb-container">Loading...</div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    async function loadLeaderboard() {
+      const container = document.getElementById('lb-container');
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=leaderboard`);
+        const data = await res.json();
+        container.replaceChildren();
+        if (!data.length) {
+          const empty = document.createElement('p');
+          empty.textContent = 'No predictions yet.';
+          container.appendChild(empty);
+          return;
+        }
+        const rounds = [
+          ['Last32', 'L32'],
+          ['Last16', 'L16'],
+          ['QuarterFinal', 'QF'],
+          ['SemiFinal', 'SF'],
+          ['Final', 'F']
+        ];
+        const table = document.createElement('table');
+        const head = document.createElement('tr');
+        ['Total', 'Name'].concat(rounds.map(function (round) { return round[1]; })).forEach(function (label, index) {
+          const cell = document.createElement('th');
+          cell.textContent = label;
+          if (index === 0) cell.className = 'pin';
+          if (index === 1) cell.className = 'pin-name';
+          head.appendChild(cell);
+        });
+        const thead = document.createElement('thead');
+        thead.appendChild(head);
+        const tbody = document.createElement('tbody');
+        data.forEach(function (row, index) {
+          const tr = document.createElement('tr');
+          const total = document.createElement('td');
+          total.className = 'pin';
+          total.textContent = String(row.Total || 0);
+          const name = document.createElement('td');
+          name.className = 'pin-name';
+          const rank = document.createElement('span');
+          rank.className = 'rank';
+          rank.textContent = String(index + 1);
+          name.appendChild(rank);
+          name.appendChild(document.createTextNode(row.Name || ''));
+          tr.appendChild(total);
+          tr.appendChild(name);
+          rounds.forEach(function (round) {
+            const cell = document.createElement('td');
+            cell.textContent = String(row[round[0]] || 0);
+            tr.appendChild(cell);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        container.appendChild(table);
+        requestAnimationFrame(function () {
+          const totalWidth = head.children[0].getBoundingClientRect().width;
+          table.querySelectorAll('.pin-name').forEach(function (cell) {
+            cell.style.left = totalWidth + 'px';
+          });
+        });
+      } catch (e) {
+        container.textContent = 'Could not load leaderboard. Check config.js';
+      }
+    }
+    loadLeaderboard();
+  </script>
+  <nav>
+    <a href="index.html">Predict</a>
+    <a href="leaderboard.html" class="active">Table</a>
+    <a href="admin.html">Admin</a>
+  </nav>
+</body>
+</html>
