@@ -47,8 +47,9 @@ body::before {
 header {
   flex: none;
   background: rgba(16, 16, 18, 0.55);
-  padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0.7rem;
+  padding: max(0.85rem, env(safe-area-inset-top)) 1rem 0.85rem;
   border-bottom: 1px solid var(--border);
+  text-align: center;
 }
 
 header p.kicker,
@@ -58,24 +59,26 @@ header h1 {
   padding-right: 0;
 }
 
-header p.kicker {
-  margin: 0 0 0.2rem;
-  padding-top: 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 header h1 {
   margin: 0;
   padding-bottom: 0;
   border-bottom: 0;
   font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
-  font-size: 1.75rem;
+  font-size: 2.35rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  line-height: 1;
+  line-height: 0.95;
+  text-align: center;
+}
+
+header p.kicker {
+  margin: 0.35rem 0 0;
+  padding-top: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
 }
 
 .container {
@@ -214,15 +217,35 @@ th, td {
 
 th { color: var(--muted); font-weight: 600; }
 
-.pin, .pin-name {
+.pin-pos, .pin-name, .pin-total {
   position: sticky;
   z-index: 2;
   background: var(--card);
   box-shadow: 1px 0 0 var(--border);
 }
 
-.pin { left: 0; font-weight: 700; }
+.pin-total { font-weight: 700; }
 .rank { margin-right: 0.35rem; color: var(--muted); }
+
+.busy {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 7, 8, 0.28);
+}
+.busy[hidden] { display: none; }
+.spin {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 3px solid rgba(244, 244, 245, 0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .status { padding: 0.8rem; border-radius: 0.75rem; margin: 0.8rem 0; }
 .status.success { background: #14301c; }

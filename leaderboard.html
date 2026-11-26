@@ -5,23 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Leaderboard - Bills Darts Predictor</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
   <header>
-    <p class="kicker">Bills fantasy darts</p>
-    <h1>League</h1>
+    <h1>Billsys Predictions</h1>
+    <p class="kicker">League</p>
   </header>
 
   <div class="container">
     <div class="card">
       <h2>League Leaderboard</h2>
       <p>5 points for exact scoreline · 2 points for correct winner · 0 for wrong</p>
-      <div class="table-scroll" id="lb-container">Loading...</div>
+      <div class="table-scroll" id="lb-container"></div>
     </div>
   </div>
 
   <script src="config.js"></script>
+  <script src="busy.js?v=1"></script>
   <script>
     async function loadLeaderboard() {
       const container = document.getElementById('lb-container');
@@ -44,11 +45,12 @@
         ];
         const table = document.createElement('table');
         const head = document.createElement('tr');
-        ['Total', 'Name'].concat(rounds.map(function (round) { return round[1]; })).forEach(function (label, index) {
+        ['Pos', 'Name', 'Total'].concat(rounds.map(function (round) { return round[1]; })).forEach(function (label, index) {
           const cell = document.createElement('th');
           cell.textContent = label;
-          if (index === 0) cell.className = 'pin';
+          if (index === 0) cell.className = 'pin-pos';
           if (index === 1) cell.className = 'pin-name';
+          if (index === 2) cell.className = 'pin-total';
           head.appendChild(cell);
         });
         const thead = document.createElement('thead');
@@ -56,18 +58,18 @@
         const tbody = document.createElement('tbody');
         data.forEach(function (row, index) {
           const tr = document.createElement('tr');
-          const total = document.createElement('td');
-          total.className = 'pin';
-          total.textContent = String(row.Total || 0);
+          const pos = document.createElement('td');
+          pos.className = 'pin-pos';
+          pos.textContent = String(index + 1);
           const name = document.createElement('td');
           name.className = 'pin-name';
-          const rank = document.createElement('span');
-          rank.className = 'rank';
-          rank.textContent = String(index + 1);
-          name.appendChild(rank);
-          name.appendChild(document.createTextNode(row.Name || ''));
-          tr.appendChild(total);
+          name.textContent = row.Name || '';
+          const total = document.createElement('td');
+          total.className = 'pin-total';
+          total.textContent = String(row.Total || 0);
+          tr.appendChild(pos);
           tr.appendChild(name);
+          tr.appendChild(total);
           rounds.forEach(function (round) {
             const cell = document.createElement('td');
             cell.textContent = String(row[round[0]] || 0);
@@ -79,9 +81,13 @@
         table.appendChild(tbody);
         container.appendChild(table);
         requestAnimationFrame(function () {
-          const totalWidth = head.children[0].getBoundingClientRect().width;
-          table.querySelectorAll('.pin-name').forEach(function (cell) {
-            cell.style.left = totalWidth + 'px';
+          var left = 0;
+          ['pin-pos', 'pin-name', 'pin-total'].forEach(function (cls) {
+            var width = head.querySelector('.' + cls).getBoundingClientRect().width;
+            table.querySelectorAll('.' + cls).forEach(function (cell) {
+              cell.style.left = left + 'px';
+            });
+            left += width;
           });
         });
       } catch (e) {
