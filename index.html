@@ -45,7 +45,13 @@
     let predictionsLocked = false;
 
     function matchDone(match) {
-      return match.Completed === true || String(match.Completed).toLowerCase() === 'true';
+      const completed = match.Completed === true || String(match.Completed).toLowerCase() === 'true';
+      if (!completed) return false;
+      const s1 = Number(match.Score1);
+      const s2 = Number(match.Score2);
+      const firstTo = Number(match.FirstTo) || 0;
+      if (!Number.isFinite(s1) || !Number.isFinite(s2)) return false;
+      return Math.max(s1, s2) === firstTo && Math.min(s1, s2) < firstTo;
     }
     let myPicks = {};
 

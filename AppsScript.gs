@@ -337,13 +337,19 @@ function submitResults(ss, data) {
   const p1Col = headers.indexOf('Player1');
   const p2Col = headers.indexOf('Player2');
   
+  const firstCol = headers.indexOf('FirstTo');
+  
   results.forEach(r => {
     for (let i = 1; i < matchData.length; i++) {
       if (matchData[i][idCol] === r.matchId) {
+        const firstTo = Number(matchData[i][firstCol]);
+        const score1 = Number(r.score1);
+        const score2 = Number(r.score2);
+        if (!(Math.max(score1, score2) === firstTo && Math.min(score1, score2) < firstTo)) break;
         const row = i + 1;
-        matches.getRange(row, s1Col + 1).setValue(r.score1);
-        matches.getRange(row, s2Col + 1).setValue(r.score2);
-        const winner = r.score1 > r.score2 ? matchData[i][p1Col] : (r.score2 > r.score1 ? matchData[i][p2Col] : 'Draw');
+        matches.getRange(row, s1Col + 1).setValue(score1);
+        matches.getRange(row, s2Col + 1).setValue(score2);
+        const winner = score1 > score2 ? matchData[i][p1Col] : matchData[i][p2Col];
         matches.getRange(row, winCol + 1).setValue(winner);
         matches.getRange(row, compCol + 1).setValue(true);
         break;
