@@ -103,21 +103,24 @@
         container.innerHTML = '<p>No matches set for this round yet. Check back later!</p>';
         return;
       }
-      container.innerHTML = matches.map(m => `
+      container.innerHTML = matches.map(m => {
+        const top = Number(m.FirstTo) || 0;
+        return `
         <article class="match-card" data-id="${esc(m.MatchID)}">
           <p class="eyebrow">First to ${esc(m.FirstTo)}</p>
           <div class="tie">
             <p class="pname">${esc(m.Player1)}</p>
-            <div class="score-wheel" data-max="${Number(m.FirstTo) || 0}" data-value="0" data-target="s1" data-label="${esc(m.Player1)} score"></div>
+            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
           </div>
           <div class="tie">
             <p class="pname">${esc(m.Player2)}</p>
-            <div class="score-wheel" data-max="${Number(m.FirstTo) || 0}" data-value="0" data-target="s2" data-label="${esc(m.Player2)} score"></div>
+            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s2" data-label="${esc(m.Player2)} score"></div>
           </div>
-          <input type="hidden" class="s1" value="0">
-          <input type="hidden" class="s2" value="0">
+          <input type="hidden" class="s1" value="${top}">
+          <input type="hidden" class="s2" value="${top}">
         </article>
-      `).join('');
+      `;
+      }).join('');
       initWheels(container);
     }
 
