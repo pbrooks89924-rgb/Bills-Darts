@@ -28,16 +28,25 @@ body {
   overflow: hidden;
   padding-bottom: 0;
   font-family: "Outfit", system-ui, sans-serif;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   line-height: 1.45;
 }
 
-body::before { content: none; }
+body::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(7, 7, 8, 0.74), rgba(7, 7, 8, 0.86)),
+    var(--board, none) center 42% / min(100vw, 36rem) auto no-repeat;
+}
 
 header {
   flex: none;
-  background: var(--bg);
+  background: rgba(16, 16, 18, 0.55);
   padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0.7rem;
   border-bottom: 1px solid var(--border);
 }
@@ -177,7 +186,7 @@ button {
   font-weight: 700;
 }
 
-.card { max-width: 100%; overflow: hidden; }
+.card { max-width: 100%; overflow: hidden; background: rgba(24, 24, 28, 0.9); }
 
 .table-scroll {
   width: 100%;
@@ -237,7 +246,7 @@ th { color: var(--muted); font-weight: 600; }
 .switch a.active { background: var(--accent); color: white; border-color: var(--accent); }
 
 .match-card {
-  background: var(--card);
+  background: rgba(24, 24, 28, 0.9);
   border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 0.9rem 1rem;
