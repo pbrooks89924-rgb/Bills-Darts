@@ -78,6 +78,10 @@
       return Array.isArray(data) ? data : [];
     }
 
+    function byName(a, b) {
+      return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+    }
+
     function stillAvailable() {
       const taken = new Set();
       matchesToAdd.forEach(function (match) {
@@ -85,7 +89,7 @@
         taken.add(match.player2);
       });
       const gone = new Set(eliminated);
-      return players.filter(function (name) { return name && !taken.has(name) && !gone.has(name); });
+      return players.filter(function (name) { return name && !taken.has(name) && !gone.has(name); }).sort(byName);
     }
 
     function fillSelect(id, names, selected) {
@@ -127,6 +131,7 @@
           alert('No players found. Add them in the Players sheet first.');
           return;
         }
+        players = players.filter(Boolean).sort(byName);
         const round = document.getElementById('round').value;
         const earlier = ROUNDS.slice(0, ROUNDS.indexOf(round));
         const prior = [];
