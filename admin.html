@@ -136,7 +136,7 @@
       if (!chosen2 || chosen2 === chosen1) {
         chosen2 = left.filter(function (name) { return name !== chosen1; })[0];
       }
-      fillSelect('p1', left.filter(function (name) { return name !== chosen2; }), chosen1);
+      fillSelect('p1', left, chosen1);
       fillSelect('p2', left.filter(function (name) { return name !== chosen1; }), chosen2);
       note.textContent = left.length + ' still to draw' + (eliminated.length ? '. ' + eliminated.length + ' already out.' : '');
       pickerLock = false;
