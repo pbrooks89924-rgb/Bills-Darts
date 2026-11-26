@@ -138,11 +138,26 @@ button {
   margin-top: 0.75rem;
 }
 
-.match-row, .pred-row, .result-row {
+button.quiet {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0.15rem 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.match-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  padding: 0.9rem 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -257,4 +272,3 @@ button.score-n.is-on { color: var(--text); }
   border: 1px solid var(--accent);
   border-radius: 0.75rem;
 }
-
