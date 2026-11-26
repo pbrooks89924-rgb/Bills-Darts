@@ -42,7 +42,24 @@
     let currentUser = null;
     let currentRound = 'Last32';
     let matches = [];
-    let predictionsLocked = false;
+
+    function roundLocked() {
+      try { return localStorage.getItem('dartsRoundLocked') === '1'; } catch (e) { return false; }
+    }
+
+    function predictionKey() {
+      return 'dartsPicks:' + (currentUser && currentUser.email ? currentUser.email : '') + ':' + currentRound;
+    }
+
+    function savedPicks() {
+      try { return JSON.parse(localStorage.getItem(predictionKey()) || '{}'); } catch (e) { return {}; }
+    }
+
+    function rememberPicks(predictions) {
+      const map = {};
+      predictions.forEach(function (pick) { map[pick.matchId] = [pick.score1, pick.score2]; });
+      try { localStorage.setItem(predictionKey(), JSON.stringify(map)); } catch (e) {}
+    }
 
     async function init() {
       currentUser = JSON.parse(localStorage.getItem('dartsUser') || 'null');
@@ -82,7 +99,6 @@
         const cfgRes = await fetch(`${SCRIPT_URL}?action=config`);
         const cfg = await cfgRes.json();
         currentRound = cfg.currentRound || 'Last32';
-        predictionsLocked = cfg.predictionsLocked === true;
         document.getElementById('round-title').textContent = `Predictions for ${currentRound}`;
 
         const res = await fetch(`${SCRIPT_URL}?action=matches&round=${currentRound}`);
@@ -108,17 +124,20 @@
       }
       container.innerHTML = matches.map(m => {
         const top = Number(m.FirstTo) || 0;
+        const saved = savedPicks()[m.MatchID];
+        const s1 = saved ? saved[0] : top;
+        const s2 = saved ? saved[1] : top;
         return `
         <article class="match-card" data-id="${esc(m.MatchID)}">
           <p class="eyebrow">First to ${esc(m.FirstTo)}</p>
           <div class="vs-line">
             <p class="pname">${esc(m.Player1)}</p>
-            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
-            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s2" data-label="${esc(m.Player2)} score"></div>
+            <div class="score-wheel" data-max="${top}" data-value="${s1}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
+            <div class="score-wheel" data-max="${top}" data-value="${s2}" data-target="s2" data-label="${esc(m.Player2)} score"></div>
             <p class="pname right">${esc(m.Player2)}</p>
           </div>
-          <input type="hidden" class="s1" value="${top}">
-          <input type="hidden" class="s2" value="${top}">
+          <input type="hidden" class="s1" value="${s1}">
+          <input type="hidden" class="s2" value="${s2}">
         </article>
       `;
       }).join('');
@@ -126,13 +145,14 @@
     }
 
     function applyLock() {
+      const locked = roundLocked();
       const button = document.getElementById('submit-predictions');
-      if (button) button.disabled = predictionsLocked;
-      if (predictionsLocked) alert('Round already started');
+      if (button) button.disabled = locked;
+      if (locked) alert('Round already started');
     }
 
     async function submitPredictions() {
-      if (predictionsLocked) {
+      if (roundLocked()) {
         alert('Round already started');
         return;
       }
@@ -171,6 +191,7 @@
         });
         const data = await res.json();
         if (data.success) {
+          rememberPicks(predictions);
           showStatus(data.message || 'Predictions submitted successfully!', 'success');
         } else {
           showStatus(data.error || 'Error', 'error');
