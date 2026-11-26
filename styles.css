@@ -41,7 +41,7 @@ body::before {
   pointer-events: none;
   background:
     linear-gradient(rgba(7, 7, 8, 0.74), rgba(7, 7, 8, 0.86)),
-    var(--board, none) center 42% / min(100vw, 36rem) auto no-repeat;
+    url("background.jpg?v=1") center 42% / min(100vw, 36rem) auto no-repeat;
 }
 
 header {
@@ -322,3 +322,4 @@ button.score-n.is-on { color: var(--text); }
   border: 1px solid var(--accent);
   border-radius: 0.75rem;
 }
+
