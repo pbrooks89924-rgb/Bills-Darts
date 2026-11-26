@@ -104,24 +104,35 @@
       });
     }
 
+    var pickerLock = false;
     function renderPickers() {
+      if (pickerLock) return;
+      pickerLock = true;
       const left = stillAvailable();
       const form = document.getElementById('add-form');
       const note = document.getElementById('draw-note');
       if (left.length < 2) {
         form.classList.add('hidden');
         note.textContent = 'No players left to draw.';
+        pickerLock = false;
         return;
       }
       form.classList.remove('hidden');
       const p1 = document.getElementById('p1').value;
-      const chosen1 = left.indexOf(p1) >= 0 ? p1 : left[0];
-      const rest = left.filter(function (name) { return name !== chosen1; });
       const p2 = document.getElementById('p2').value;
-      fillSelect('p1', left, chosen1);
-      fillSelect('p2', rest, rest.indexOf(p2) >= 0 ? p2 : rest[0]);
+      const chosen1 = left.indexOf(p1) >= 0 ? p1 : left[0];
+      let chosen2 = left.indexOf(p2) >= 0 ? p2 : '';
+      if (!chosen2 || chosen2 === chosen1) {
+        chosen2 = left.filter(function (name) { return name !== chosen1; })[0];
+      }
+      fillSelect('p1', left.filter(function (name) { return name !== chosen2; }), chosen1);
+      fillSelect('p2', left.filter(function (name) { return name !== chosen1; }), chosen2);
       note.textContent = left.length + ' still to draw' + (eliminated.length ? '. ' + eliminated.length + ' already out.' : '');
+      pickerLock = false;
     }
+
+    document.getElementById('p1').addEventListener('change', renderPickers);
+    document.getElementById('p2').addEventListener('change', renderPickers);
 
     async function loadPlayers() {
       try {
