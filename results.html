@@ -65,8 +65,14 @@
     function renderMatches() {
       const container = document.getElementById('matches-container');
       container.innerHTML = matches.map(m => {
-        const s1 = m.Score1 === '' || m.Score1 === undefined || m.Score1 === null ? 0 : Number(m.Score1);
-        const s2 = m.Score2 === '' || m.Score2 === undefined || m.Score2 === null ? 0 : Number(m.Score2);
+        const firstTo = Number(m.FirstTo) || 0;
+        function scoreOrTop(value) {
+          if (value === '' || value === undefined || value === null) return firstTo;
+          const n = Number(value);
+          return Number.isFinite(n) ? n : firstTo;
+        }
+        const s1 = scoreOrTop(m.Score1);
+        const s2 = scoreOrTop(m.Score2);
         return `
         <article class="match-card" data-id="${m.MatchID}">
           <p class="eyebrow">First to ${m.FirstTo}</p>
