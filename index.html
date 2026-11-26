@@ -42,6 +42,54 @@
     let currentUser = null;
     let currentRound = 'Last32';
     let matches = [];
+    let myPicks = {};
+
+    function loadMyPicks() {
+      return new Promise(function (resolve) {
+        if (!currentUser || !currentUser.email) {
+          myPicks = {};
+          resolve();
+          return;
+        }
+        var done = false;
+        var script = document.createElement('script');
+        function finish(picks) {
+          if (done) return;
+          done = true;
+          myPicks = picks || {};
+          if (script.parentNode) script.parentNode.removeChild(script);
+          resolve();
+        }
+        window.google = window.google || {};
+        google.visualization = google.visualization || {};
+        google.visualization.Query = google.visualization.Query || {};
+        google.visualization.Query.setResponse = function (response) {
+          var picks = {};
+          try {
+            var cols = (response.table && response.table.cols) || [];
+            var labels = cols.map(function (col) { return col.label; });
+            var rows = (response.table && response.table.rows) || [];
+            var email = String(currentUser.email || '').toLowerCase();
+            rows.forEach(function (row) {
+              var obj = {};
+              labels.forEach(function (label, index) {
+                var cell = row.c && row.c[index];
+                obj[label] = cell ? cell.v : '';
+              });
+              if (String(obj.Email || '').toLowerCase() !== email) return;
+              if (String(obj.Round || '') !== currentRound) return;
+              if (!obj.MatchID) return;
+              picks[String(obj.MatchID)] = [Number(obj.PredScore1), Number(obj.PredScore2)];
+            });
+          } catch (e) {}
+          finish(picks);
+        };
+        script.src = 'https://docs.google.com/spreadsheets/d/1sMbwGymuC5pK1w8wVjNQTGtdMOV1NMYde6kIanjkv70/gviz/tq?tqx=out:json&sheet=Predictions';
+        script.onerror = function () { finish({}); };
+        document.head.appendChild(script);
+        setTimeout(function () { finish({}); }, 8000);
+      });
+    }
 
     async function init() {
       currentUser = JSON.parse(localStorage.getItem('dartsUser') || 'null');
@@ -85,6 +133,7 @@
 
         const res = await fetch(`${SCRIPT_URL}?action=matches&round=${currentRound}`);
         matches = await res.json();
+        await loadMyPicks();
         renderMatches();
       } catch (e) {
         showStatus('Could not load matches. Check SCRIPT_URL in config.js', 'error');
@@ -105,17 +154,20 @@
       }
       container.innerHTML = matches.map(m => {
         const top = Number(m.FirstTo) || 0;
+        const saved = myPicks[String(m.MatchID)];
+        const s1 = saved && Number.isFinite(saved[0]) ? Math.min(top, Math.max(0, saved[0])) : top;
+        const s2 = saved && Number.isFinite(saved[1]) ? Math.min(top, Math.max(0, saved[1])) : top;
         return `
         <article class="match-card" data-id="${esc(m.MatchID)}">
           <p class="eyebrow">First to ${esc(m.FirstTo)}</p>
           <div class="vs-line">
             <p class="pname">${esc(m.Player1)}</p>
-            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
-            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s2" data-label="${esc(m.Player2)} score"></div>
+            <div class="score-wheel" data-max="${top}" data-value="${s1}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
+            <div class="score-wheel" data-max="${top}" data-value="${s2}" data-target="s2" data-label="${esc(m.Player2)} score"></div>
             <p class="pname right">${esc(m.Player2)}</p>
           </div>
-          <input type="hidden" class="s1" value="${top}">
-          <input type="hidden" class="s2" value="${top}">
+          <input type="hidden" class="s1" value="${s1}">
+          <input type="hidden" class="s2" value="${s2}">
         </article>
       `;
       }).join('');
