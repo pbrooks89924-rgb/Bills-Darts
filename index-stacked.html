@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Predict (stacked) - Bills Darts Predictor</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css?v=6">
+</head>
+<body>
+  <header>
+    <h1>Billsys Predictions</h1>
+    <p class="kicker">Predict</p>
+  </header>
+
+  <div class="container">
+    <form id="user-setup" class="card" onsubmit="saveUser(event)">
+      <h2>Welcome</h2>
+      <p>Enter your details to start predicting. We'll remember you next time.</p>
+      <label>Your Name</label>
+      <input type="text" id="user-name" autocomplete="name" enterkeyhint="next" placeholder="e.g. Bill" required>
+      <label>Email</label>
+      <input type="email" id="user-email" autocomplete="email" inputmode="email" enterkeyhint="go" placeholder="you@email.com" required>
+      <button type="submit">Continue</button>
+    </form>
+
+    <div id="predict-section" class="hidden">
+      <div class="card">
+        <h2 id="round-title">Make your predictions</h2>
+        <p id="user-greeting"></p>
+        <div id="matches-container"></div>
+        <button onclick="submitPredictions()">Submit Predictions</button>
+        <div id="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="wheels.js?v=3"></script>
+  <script src="config.js"></script>
+  <script src="busy.js?v=1"></script>
+  <script>
+    let currentUser = null;
+    let currentRound = 'Last32';
+    let matches = [];
+
+    async function init() {
+      currentUser = JSON.parse(localStorage.getItem('dartsUser') || 'null');
+      if (currentUser) {
+        document.getElementById('user-setup').classList.add('hidden');
+        document.getElementById('predict-section').classList.remove('hidden');
+        document.getElementById('user-greeting').textContent = `Welcome back, ${currentUser.name}!`;
+        await loadConfigAndMatches();
+      }
+    }
+
+    function saveUser(event) {
+      if (event) event.preventDefault();
+      const name = document.getElementById('user-name').value.trim();
+      const email = document.getElementById('user-email').value.trim().toLowerCase();
+      if (!name || !email.includes('@')) return alert('Please enter a name and a valid email');
+      currentUser = { name, email };
+      try { localStorage.setItem('dartsUser', JSON.stringify(currentUser)); } catch (e) {}
+      document.getElementById('user-setup').classList.add('hidden');
+      document.getElementById('predict-section').classList.remove('hidden');
+      document.getElementById('user-greeting').textContent = `Welcome, ${name}!`;
+      loadConfigAndMatches();
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'registerEntrant', name, email })
+      }).then(function (res) { return res.json(); }).then(function (data) {
+        if (data.error) throw new Error(data.error);
+        showStatus('Saved to the table.', 'success');
+      }).catch(function () {
+        showStatus('You can predict, but the table did not save your name yet.', 'error');
+      });
+    }
+
+    async function loadConfigAndMatches() {
+      try {
+        const cfgRes = await fetch(`${SCRIPT_URL}?action=config`);
+        const cfg = await cfgRes.json();
+        currentRound = cfg.currentRound || 'Last32';
+        document.getElementById('round-title').textContent = `Predictions for ${currentRound}`;
+
+        const res = await fetch(`${SCRIPT_URL}?action=matches&round=${currentRound}`);
+        matches = await res.json();
+        renderMatches();
+      } catch (e) {
+        showStatus('Could not load matches. Check SCRIPT_URL in config.js', 'error');
+      }
+    }
+
+    function esc(value) {
+      const node = document.createElement("span");
+      node.textContent = value == null ? "" : String(value);
+      return node.innerHTML;
+    }
+
+    function renderMatches() {
+      const container = document.getElementById('matches-container');
+      if (!matches.length) {
+        container.innerHTML = '<p>No matches set for this round yet. Check back later!</p>';
+        return;
+      }
+      container.innerHTML = matches.map(m => {
+        const top = Number(m.FirstTo) || 0;
+        return `
+        <article class="match-card" data-id="${esc(m.MatchID)}">
+          <p class="eyebrow">First to ${esc(m.FirstTo)}</p>
+          <div class="tie">
+            <p class="pname">${esc(m.Player1)}</p>
+            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s1" data-label="${esc(m.Player1)} score"></div>
+          </div>
+          <div class="tie">
+            <p class="pname">${esc(m.Player2)}</p>
+            <div class="score-wheel" data-max="${top}" data-value="${top}" data-target="s2" data-label="${esc(m.Player2)} score"></div>
+          </div>
+          <input type="hidden" class="s1" value="${top}">
+          <input type="hidden" class="s2" value="${top}">
+        </article>
+      `;
+      }).join('');
+      initWheels(container);
+    }
+
+    async function submitPredictions() {
+      const rows = document.querySelectorAll('.match-card');
+      const predictions = [];
+      let valid = true;
+      rows.forEach(row => {
+        const s1 = parseInt(row.querySelector('.s1').value);
+        const s2 = parseInt(row.querySelector('.s2').value);
+        const match = matches.find(m => m.MatchID === row.dataset.id);
+        if (isNaN(s1) || isNaN(s2)) { valid = false; return; }
+        if (Math.max(s1, s2) !== match.FirstTo || Math.min(s1, s2) >= match.FirstTo) {
+          valid = false;
+          alert(`Invalid score for ${match.Player1} vs ${match.Player2}. One player must reach exactly ${match.FirstTo}, the other less.`);
+          return;
+        }
+        predictions.push({ matchId: row.dataset.id, score1: s1, score2: s2 });
+      });
+      if (!valid || predictions.length !== matches.length) {
+        showStatus('Please fill all scores correctly', 'error');
+        return;
+      }
+
+      showStatus('Submitting...', '');
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' }, // Apps Script needs this
+          body: JSON.stringify({
+            action: 'submitPredictions',
+            email: currentUser.email,
+            name: currentUser.name,
+            round: currentRound,
+            predictions
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showStatus(data.message || 'Predictions submitted successfully!', 'success');
+        } else {
+          showStatus(data.error || 'Error', 'error');
+        }
+      } catch (e) {
+        showStatus('Network error. Is the Apps Script deployed?', 'error');
+      }
+    }
+
+    function showStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+    }
+
+    // Check if email exists and load name if cache cleared
+    async function checkEmailOnBlur() {
+      const email = document.getElementById('user-email').value.trim().toLowerCase();
+      if (!email) return;
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=user&email=${encodeURIComponent(email)}`);
+        const user = await res.json();
+        if (user && user.name) {
+          document.getElementById('user-name').value = user.name;
+        }
+      } catch (e) {}
+    }
+    document.getElementById('user-email')?.addEventListener('blur', checkEmailOnBlur);
+
+    init();
+  </script>
+  <nav>
+    <a href="index.html" class="active">Predict</a>
+    <a href="leaderboard.html">Table</a>
+    <a href="admin.html">Admin</a>
+  </nav>
+</body>
+</html>

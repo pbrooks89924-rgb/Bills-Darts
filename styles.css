@@ -291,6 +291,20 @@ th { color: var(--muted); font-weight: 600; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.vs-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.vs-line .pname {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.25rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+.vs-line .pname.right { text-align: right; }
+.vs-line .score-wheel { width: 3.5rem; }
 .tie {
   display: flex;
   align-items: center;
